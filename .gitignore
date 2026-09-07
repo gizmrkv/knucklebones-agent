@@ -81,3 +81,6 @@ __marimo__/
 
 # wandb
 wandb/
+
+# ベンチマーク・実験の実行結果(再生成可能)
+results/
