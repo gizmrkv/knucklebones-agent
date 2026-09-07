@@ -2,8 +2,9 @@
 // src/knucklebones/agents/expectimax.py(Python版)の移植。
 // 評価関数は近似ヒューリスティックを持たず、常に厳密な自分スコア-相手スコアを使う。
 
-import { DIE_FACES, applyMove, boardScore, legalColumns } from "./game";
-import type { GameState } from "./game";
+import { DIE_FACES, applyMove, boardScore, legalColumns } from "../game";
+import type { GameState } from "../game";
+import type { Agent } from "./types";
 
 function serializeState(state: GameState): string {
   const serializeBoard = (board: GameState["boards"][number]) =>
@@ -11,7 +12,7 @@ function serializeState(state: GameState): string {
   return `${state.toMove}|${serializeBoard(state.boards[0])}|${serializeBoard(state.boards[1])}`;
 }
 
-export class ExpectimaxAgent {
+export class ExpectimaxAgent implements Agent {
   private readonly depth: number;
   private cache = new Map<string, number>();
 

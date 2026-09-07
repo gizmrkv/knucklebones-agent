@@ -1,5 +1,6 @@
 import { COLUMN_CAPACITY, boardScore, columnScore, legalColumns } from "./game";
 import type { BoardState, GameState } from "./game";
+import type { AgentOption } from "./agents/types";
 
 export interface RenderProps {
   game: GameState;
@@ -9,6 +10,12 @@ export interface RenderProps {
   humanPlayer: 0 | 1;
   onColumnClick: (columnIndex: number) => void;
   onRestart: () => void;
+  opponentOptions: readonly AgentOption[];
+  selectedOpponentId: string;
+  onOpponentChange: (id: string) => void;
+  showHint: boolean;
+  onHintToggle: (checked: boolean) => void;
+  suggestedColumn: number | null;
 }
 
 /**
@@ -75,6 +82,51 @@ function renderColumnScores(board: BoardState): HTMLElement {
   return rowEl;
 }
 
+function renderHintRow(suggestedColumn: number | null): HTMLElement {
+  const rowEl = document.createElement("div");
+  rowEl.className = "hint-row";
+  for (let columnIndex = 0; columnIndex < COLUMN_CAPACITY; columnIndex++) {
+    const cellEl = document.createElement("div");
+    cellEl.className = "hint-marker";
+    if (columnIndex === suggestedColumn) {
+      cellEl.textContent = "▼";
+      cellEl.classList.add("active");
+    }
+    rowEl.appendChild(cellEl);
+  }
+  return rowEl;
+}
+
+function renderControls(props: RenderProps): HTMLElement {
+  const controlsEl = document.createElement("div");
+  controlsEl.className = "controls";
+
+  const opponentLabel = document.createElement("label");
+  opponentLabel.textContent = "対戦相手: ";
+  const select = document.createElement("select");
+  for (const option of props.opponentOptions) {
+    const optionEl = document.createElement("option");
+    optionEl.value = option.id;
+    optionEl.textContent = option.label;
+    optionEl.selected = option.id === props.selectedOpponentId;
+    select.appendChild(optionEl);
+  }
+  select.addEventListener("change", () => props.onOpponentChange(select.value));
+  opponentLabel.appendChild(select);
+  controlsEl.appendChild(opponentLabel);
+
+  const hintLabel = document.createElement("label");
+  const hintCheckbox = document.createElement("input");
+  hintCheckbox.type = "checkbox";
+  hintCheckbox.checked = props.showHint;
+  hintCheckbox.addEventListener("change", () => props.onHintToggle(hintCheckbox.checked));
+  hintLabel.appendChild(hintCheckbox);
+  hintLabel.append(" おすすめの列を表示");
+  controlsEl.appendChild(hintLabel);
+
+  return controlsEl;
+}
+
 export function renderApp(props: RenderProps): void {
   const app = document.querySelector<HTMLDivElement>("#app");
   if (!app) throw new Error("#app element not found");
@@ -87,11 +139,12 @@ export function renderApp(props: RenderProps): void {
   title.textContent = "Knucklebones";
   container.appendChild(title);
 
+  container.appendChild(renderControls(props));
+
   const aiPlayer = props.humanPlayer === 0 ? 1 : 0;
-  const humanClickableColumns =
-    !props.gameOver && props.game.toMove === props.humanPlayer
-      ? legalColumns(props.game.boards[props.humanPlayer])
-      : [];
+  const isHumanTurn = !props.gameOver && props.game.toMove === props.humanPlayer;
+  const humanClickableColumns = isHumanTurn ? legalColumns(props.game.boards[props.humanPlayer]) : [];
+  const suggestedColumn = isHumanTurn ? props.suggestedColumn : null;
 
   // 相手を上、自分を下に配置する。相手の盤面は上から下へ、自分の盤面は
   // 下から上へダイスが積まれて見えるようにし、中央に近い側で列同士が
@@ -113,6 +166,7 @@ export function renderApp(props: RenderProps): void {
   const humanSection = document.createElement("div");
   humanSection.className = "player-section";
   humanSection.appendChild(renderColumnScores(props.game.boards[props.humanPlayer]));
+  humanSection.appendChild(renderHintRow(suggestedColumn));
   humanSection.appendChild(
     renderBoard(props.game.boards[props.humanPlayer], humanClickableColumns, true, props.onColumnClick),
   );
