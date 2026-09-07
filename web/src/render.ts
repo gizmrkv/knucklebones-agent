@@ -10,18 +10,20 @@ export interface RenderProps {
   humanPlayer: 0 | 1;
   onColumnClick: (columnIndex: number) => void;
   onRestart: () => void;
-  opponentOptions: readonly AgentOption[];
+  agentOptions: readonly AgentOption[];
   selectedOpponentId: string;
   onOpponentChange: (id: string) => void;
+  selectedHintAgentId: string;
+  onHintAgentChange: (id: string) => void;
   showHint: boolean;
   onHintToggle: (checked: boolean) => void;
   suggestedColumn: number | null;
 }
 
 /**
- * 盤面を描画する。`growFromBottom`がtrueだと自分の盤面のように下から上へ、
- * falseだと相手の盤面のように上から下へダイスが積まれて見えるようにする
- * (画面上は常に上から3行分を描画するが、値を敷き詰める向きだけを変える)。
+ * 盤面を描画する。`growFromBottom`がtrueだと下段から、falseだと上段から
+ * ダイスを詰めていく(画面上は常に上から3行分を描画するが、値を敷き詰める
+ * 向きだけを変える)。どちらを自分/相手に割り当てるかは呼び出し側で決める。
  */
 function renderBoard(
   board: BoardState,
@@ -97,23 +99,37 @@ function renderHintRow(suggestedColumn: number | null): HTMLElement {
   return rowEl;
 }
 
+function renderAgentSelect(
+  labelText: string,
+  options: readonly AgentOption[],
+  selectedId: string,
+  onChange: (id: string) => void,
+): HTMLElement {
+  const label = document.createElement("label");
+  label.textContent = `${labelText}: `;
+  const select = document.createElement("select");
+  for (const option of options) {
+    const optionEl = document.createElement("option");
+    optionEl.value = option.id;
+    optionEl.textContent = option.label;
+    optionEl.selected = option.id === selectedId;
+    select.appendChild(optionEl);
+  }
+  select.addEventListener("change", () => onChange(select.value));
+  label.appendChild(select);
+  return label;
+}
+
 function renderControls(props: RenderProps): HTMLElement {
   const controlsEl = document.createElement("div");
   controlsEl.className = "controls";
 
-  const opponentLabel = document.createElement("label");
-  opponentLabel.textContent = "対戦相手: ";
-  const select = document.createElement("select");
-  for (const option of props.opponentOptions) {
-    const optionEl = document.createElement("option");
-    optionEl.value = option.id;
-    optionEl.textContent = option.label;
-    optionEl.selected = option.id === props.selectedOpponentId;
-    select.appendChild(optionEl);
-  }
-  select.addEventListener("change", () => props.onOpponentChange(select.value));
-  opponentLabel.appendChild(select);
-  controlsEl.appendChild(opponentLabel);
+  controlsEl.appendChild(
+    renderAgentSelect("対戦相手", props.agentOptions, props.selectedOpponentId, props.onOpponentChange),
+  );
+  controlsEl.appendChild(
+    renderAgentSelect("ヒントAI", props.agentOptions, props.selectedHintAgentId, props.onHintAgentChange),
+  );
 
   const hintLabel = document.createElement("label");
   const hintCheckbox = document.createElement("input");
@@ -146,15 +162,14 @@ export function renderApp(props: RenderProps): void {
   const humanClickableColumns = isHumanTurn ? legalColumns(props.game.boards[props.humanPlayer]) : [];
   const suggestedColumn = isHumanTurn ? props.suggestedColumn : null;
 
-  // 相手を上、自分を下に配置する。相手の盤面は上から下へ、自分の盤面は
-  // 下から上へダイスが積まれて見えるようにし、中央に近い側で列同士が
-  // 対応して見えるようにする。
+  // 相手を上、自分を下に配置する。自分の盤面は上方向へ、相手の盤面は
+  // 下方向へダイスが積まれて見えるようにする。
   const aiSection = document.createElement("div");
   aiSection.className = "player-section";
   const aiLabel = document.createElement("h2");
   aiLabel.textContent = `AI: ${boardScore(props.game.boards[aiPlayer])}点`;
   aiSection.appendChild(aiLabel);
-  aiSection.appendChild(renderBoard(props.game.boards[aiPlayer], [], false));
+  aiSection.appendChild(renderBoard(props.game.boards[aiPlayer], [], true));
   aiSection.appendChild(renderColumnScores(props.game.boards[aiPlayer]));
   container.appendChild(aiSection);
 
@@ -168,7 +183,7 @@ export function renderApp(props: RenderProps): void {
   humanSection.appendChild(renderColumnScores(props.game.boards[props.humanPlayer]));
   humanSection.appendChild(renderHintRow(suggestedColumn));
   humanSection.appendChild(
-    renderBoard(props.game.boards[props.humanPlayer], humanClickableColumns, true, props.onColumnClick),
+    renderBoard(props.game.boards[props.humanPlayer], humanClickableColumns, false, props.onColumnClick),
   );
   const humanLabel = document.createElement("h2");
   humanLabel.textContent = `あなた: ${boardScore(props.game.boards[props.humanPlayer])}点`;
