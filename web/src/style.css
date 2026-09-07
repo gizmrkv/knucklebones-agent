@@ -5,6 +5,8 @@
   --board-bg: #fffdf8;
   --cell-border: #c9c2b4;
   --accent: #b3541e;
+  --double-color: #c9a227;
+  --triple-color: #3f7fc1;
   font-family: system-ui, sans-serif;
 }
 
@@ -15,6 +17,8 @@
     --board-bg: #2a2723;
     --cell-border: #4a453d;
     --accent: #e08a4f;
+    --double-color: #e0c04a;
+    --triple-color: #6ba6e8;
   }
 }
 
@@ -48,17 +52,16 @@ h1 {
   min-height: 1.5em;
 }
 
-.boards-row {
+.player-section {
   display: flex;
-  justify-content: center;
-  gap: 2rem;
-  flex-wrap: wrap;
-  margin: 1.5rem 0;
+  flex-direction: column;
+  align-items: center;
+  margin: 0.5rem 0;
 }
 
 .player-section h2 {
   font-size: 1rem;
-  margin: 0 0 0.5rem;
+  margin: 0.5rem 0;
 }
 
 .board {
@@ -90,13 +93,35 @@ h1 {
   align-items: center;
   justify-content: center;
   font-size: 1.8rem;
-  border: 1px solid var(--cell-border);
+  border: 2px solid var(--cell-border);
   border-radius: 0.25rem;
   background: transparent;
 }
 
 .cell.filled {
   background: var(--board-bg);
+}
+
+.cell.double {
+  border-color: var(--double-color);
+}
+
+.cell.triple {
+  border-color: var(--triple-color);
+}
+
+.column-scores {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 0.5rem;
+}
+
+.column-score {
+  width: 3.2rem;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 600;
+  opacity: 0.85;
 }
 
 .restart-button {
